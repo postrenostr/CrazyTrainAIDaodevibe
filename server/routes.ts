@@ -13,8 +13,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  console.log('📝 Registering routes...');
+  
   // Auth middleware
   await setupAuth(app);
+  
+  console.log('✅ Auth setup complete, registering API routes...');
+  
+  // Add a simple health check endpoint that should work
+  app.get('/api/health', (req, res) => {
+    console.log('✅ Health check endpoint hit');
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -30,17 +41,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe subscription route
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
-    console.log('🚀 SUBSCRIPTION ENDPOINT HIT!');
-    console.log('📝 Request method:', req.method);
-    console.log('📝 Request URL:', req.url);
-    console.log('👤 User object:', req.user);
-    
     try {
-      console.log('🚀 Starting subscription creation...');
       const userId = req.user.claims.sub;
-      console.log('👤 User ID:', userId);
       const user = await storage.getUser(userId);
-      console.log('👤 User data:', user);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -59,35 +62,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!user.email) {
-        console.log('❌ User email missing');
         return res.status(400).json({ message: 'User email is required' });
       }
-      console.log('📧 User email confirmed:', user.email);
 
       let customerId = user.stripeCustomerId;
       
       // Create Stripe customer if doesn't exist
       if (!customerId) {
-        console.log('💳 Creating new Stripe customer...');
         const customer = await stripe.customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
         });
         customerId = customer.id;
-        console.log('✅ Stripe customer created:', customerId);
-      } else {
-        console.log('✅ Using existing customer:', customerId);
       }
 
       // Create product first
-      console.log('📦 Creating Stripe product...');
       const product = await stripe.products.create({
         name: 'Premium Plan',
       });
-      console.log('✅ Product created:', product.id);
 
       // Create price for the product
-      console.log('💰 Creating Stripe price...');
       const price = await stripe.prices.create({
         currency: 'usd',
         unit_amount: 100, // $1.00 in cents
@@ -96,10 +90,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         product: product.id,
       });
-      console.log('✅ Price created:', price.id);
 
       // Create subscription
-      console.log('🔄 Creating Stripe subscription...');
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{
@@ -111,7 +103,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         expand: ['latest_invoice.payment_intent'],
       });
-      console.log('✅ Subscription created:', subscription.id);
 
       // Update user with Stripe info
       await storage.updateUserStripeInfo(userId, customerId, subscription.id);
@@ -124,12 +115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientSecret: paymentIntent.client_secret,
       });
     } catch (error: any) {
-      console.error("❌ SUBSCRIPTION ERROR CAUGHT:");
-      console.error("❌ Error type:", typeof error);
-      console.error("❌ Error message:", error.message);
-      console.error("❌ Error stack:", error.stack);
-      console.error("❌ Full error object:", error);
-      res.status(400).json({ message: error.message || 'Unknown error occurred' });
+      console.error("Subscription creation error:", error);
+      res.status(400).json({ message: error.message });
     }
   });
 
@@ -191,6 +178,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  console.log('✅ All routes registered successfully');
+  console.log('📝 Available routes:');
+  console.log('  - GET /api/health');
+  console.log('  - GET /api/auth/user');
+  console.log('  - POST /api/create-subscription');
+  console.log('  - GET /api/subscription-status');
+  console.log('  - POST /api/create-portal-session');
+  
   const httpServer = createServer(app);
   return httpServer;
 }
