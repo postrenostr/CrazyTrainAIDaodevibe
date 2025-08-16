@@ -9,7 +9,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-07-30.basil",
+  // Use a stable, officially supported API version
+  // @ts-ignore Stripe's type declarations only include the very latest version
+  apiVersion: "2024-04-10",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
