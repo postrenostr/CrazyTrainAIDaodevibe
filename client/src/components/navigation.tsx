@@ -15,7 +15,7 @@ export default function Navigation() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-xl font-bold text-gray-900" data-testid="text-brand-name">
-                SubService
+                CrazyTrainAI
               </h1>
             </div>
           </div>

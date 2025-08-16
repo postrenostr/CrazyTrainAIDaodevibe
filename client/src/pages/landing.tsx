@@ -14,7 +14,7 @@ export default function Landing() {
             <i className="fas fa-crown text-white text-xl"></i>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Welcome to SubService
+            Welcome to CrazyTrainAI
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Sign in with your Google account to get started

@@ -2,7 +2,7 @@
 
 ## Overview
 
-SubService is a subscription-based web application built with a modern full-stack architecture. The application provides user authentication through Replit's authentication system and integrates with Stripe for payment processing and subscription management. Users can sign up, manage subscriptions, and access premium features through a clean, responsive interface built with React and shadcn/ui components.
+CrazyTrainAI is a subscription-based web application built with a modern full-stack architecture. The application provides user authentication through Google OAuth and integrates with Stripe for payment processing and subscription management. Users can sign up, manage subscriptions, and access premium features through a clean, responsive interface built with React and shadcn/ui components.
 
 ## User Preferences
 
