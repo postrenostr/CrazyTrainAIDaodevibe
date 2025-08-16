@@ -30,6 +30,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe subscription route
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
+    console.log('🚀 SUBSCRIPTION ENDPOINT HIT!');
+    console.log('📝 Request method:', req.method);
+    console.log('📝 Request URL:', req.url);
+    console.log('👤 User object:', req.user);
+    
     try {
       console.log('🚀 Starting subscription creation...');
       const userId = req.user.claims.sub;
@@ -119,9 +124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientSecret: paymentIntent.client_secret,
       });
     } catch (error: any) {
-      console.error("❌ Subscription creation error:", error.message);
-      console.error("❌ Full error:", error);
-      res.status(400).json({ message: error.message });
+      console.error("❌ SUBSCRIPTION ERROR CAUGHT:");
+      console.error("❌ Error type:", typeof error);
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error stack:", error.stack);
+      console.error("❌ Full error object:", error);
+      res.status(400).json({ message: error.message || 'Unknown error occurred' });
     }
   });
 
