@@ -41,7 +41,7 @@ export async function setupAuth(app: Express) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    callbackURL: "/api/auth/google/callback"
+    callbackURL: "/auth/google/callback"
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
@@ -81,7 +81,7 @@ export async function setupAuth(app: Express) {
     passport.authenticate('google', { scope: ['profile', 'email'] })
   );
 
-  app.get('/api/auth/google/callback',
+  app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }),
     (req, res) => {
       res.redirect('/');
