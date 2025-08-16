@@ -45,6 +45,8 @@ export async function setupAuth(app: Express) {
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
+      console.log('🔍 Google OAuth callback received for user:', profile.id);
+      
       // Upsert user in database
       await storage.upsertUser({
         id: profile.id,
@@ -67,8 +69,10 @@ export async function setupAuth(app: Express) {
         expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 7 // 1 week from now
       };
 
+      console.log('✅ User authenticated successfully:', user.claims.email);
       return done(null, user);
     } catch (error) {
+      console.error('❌ Google OAuth error:', error);
       return done(error, false);
     }
   }));
@@ -84,13 +88,14 @@ export async function setupAuth(app: Express) {
   app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }),
     (req, res) => {
+      console.log('🎉 Google OAuth callback successful, redirecting to home');
       res.redirect('/');
     }
   );
 
   // Login route (redirects to Google)
   app.get("/api/login", (req, res) => {
-    res.redirect('/api/auth/google');
+    res.redirect('/auth/google');
   });
 
   // Logout route
@@ -103,12 +108,16 @@ export async function setupAuth(app: Express) {
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
+  
+  console.log('🔐 Auth check - isAuthenticated():', req.isAuthenticated());
+  console.log('🔐 Auth check - user exists:', !!user);
+  console.log('🔐 Auth check - user.claims.sub:', user?.claims?.sub);
 
   if (!req.isAuthenticated() || !user?.claims?.sub) {
+    console.log('❌ Authentication failed');
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  // For Google OAuth, we don't need to refresh tokens as frequently
-  // The session itself manages the authentication state
+  console.log('✅ Authentication successful for user:', user.claims.email);
   return next();
 };

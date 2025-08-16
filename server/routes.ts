@@ -31,8 +31,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe subscription route
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('🚀 Starting subscription creation...');
       const userId = req.user.claims.sub;
+      console.log('👤 User ID:', userId);
       const user = await storage.getUser(userId);
+      console.log('👤 User data:', user);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -51,26 +54,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!user.email) {
+        console.log('❌ User email missing');
         return res.status(400).json({ message: 'User email is required' });
       }
+      console.log('📧 User email confirmed:', user.email);
 
       let customerId = user.stripeCustomerId;
       
       // Create Stripe customer if doesn't exist
       if (!customerId) {
+        console.log('💳 Creating new Stripe customer...');
         const customer = await stripe.customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
         });
         customerId = customer.id;
+        console.log('✅ Stripe customer created:', customerId);
+      } else {
+        console.log('✅ Using existing customer:', customerId);
       }
 
       // Create product first
+      console.log('📦 Creating Stripe product...');
       const product = await stripe.products.create({
         name: 'Premium Plan',
       });
+      console.log('✅ Product created:', product.id);
 
       // Create price for the product
+      console.log('💰 Creating Stripe price...');
       const price = await stripe.prices.create({
         currency: 'usd',
         unit_amount: 100, // $1.00 in cents
@@ -79,8 +91,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         product: product.id,
       });
+      console.log('✅ Price created:', price.id);
 
       // Create subscription
+      console.log('🔄 Creating Stripe subscription...');
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{
@@ -92,6 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         expand: ['latest_invoice.payment_intent'],
       });
+      console.log('✅ Subscription created:', subscription.id);
 
       // Update user with Stripe info
       await storage.updateUserStripeInfo(userId, customerId, subscription.id);
@@ -104,7 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientSecret: paymentIntent.client_secret,
       });
     } catch (error: any) {
-      console.error("Subscription creation error:", error);
+      console.error("❌ Subscription creation error:", error.message);
+      console.error("❌ Full error:", error);
       res.status(400).json({ message: error.message });
     }
   });
