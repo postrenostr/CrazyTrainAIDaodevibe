@@ -31,13 +31,13 @@ Preferred communication style: Simple, everyday language.
 - **Schema Management**: Drizzle Kit for migrations and schema management
 - **Key Tables**:
   - `users` - User profiles with Stripe customer/subscription data
-  - `sessions` - Session storage for authentication (required for Replit Auth)
+  - `sessions` - Session storage for authentication (required for Google OAuth)
 
 ### Authentication & Authorization
-- **Primary Auth**: Replit Authentication with OIDC integration
+- **Primary Auth**: Google OAuth 2.0 authentication
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 - **Security**: HTTP-only cookies with secure flags for production
-- **User Data**: Automatic user profile creation and updates through OIDC claims
+- **User Data**: Automatic user profile creation and updates from Google profile data
 
 ### Payment Integration
 - **Payment Provider**: Stripe with full subscription lifecycle management
@@ -58,7 +58,7 @@ Preferred communication style: Simple, everyday language.
 ### Core Services
 - **Neon Database**: PostgreSQL database hosting with serverless capabilities
 - **Stripe**: Payment processing and subscription management platform
-- **Replit Auth**: Authentication service with OIDC integration
+- **Google OAuth**: Google's OAuth 2.0 authentication service
 
 ### Key Libraries
 - **Frontend**: React, TanStack Query, Wouter, React Hook Form, shadcn/ui, Tailwind CSS
