@@ -25,8 +25,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       maxAge: sessionTtl,
+      sameSite: 'lax'
     },
   });
 }
@@ -80,18 +81,19 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  // Google auth routes
-  app.get('/api/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
+  // Google auth routes  
+  app.get('/api/auth/google', (req, res, next) => {
+    console.log('🚀 Starting Google OAuth flow...');
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  });
 
-  app.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/' }),
-    (req, res) => {
-      console.log('🎉 Google OAuth callback successful, redirecting to home');
-      res.redirect('/');
-    }
-  );
+  app.get('/auth/google/callback', (req, res, next) => {
+    console.log('🔄 Google OAuth callback received');
+    passport.authenticate('google', { 
+      failureRedirect: '/',
+      successRedirect: '/'
+    })(req, res, next);
+  });
 
   // Login route (redirects to Google)
   app.get("/api/login", (req, res) => {
