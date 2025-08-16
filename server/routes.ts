@@ -9,7 +9,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-07-30.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (subscription.status === 'active') {
           return res.json({
             subscriptionId: subscription.id,
-            clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+            clientSecret: null, // Already has active subscription
           });
         }
       }
@@ -65,20 +65,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId = customer.id;
       }
 
+      // Create product first
+      const product = await stripe.products.create({
+        name: 'Premium Plan',
+      });
+
+      // Create price for the product
+      const price = await stripe.prices.create({
+        currency: 'usd',
+        unit_amount: 100, // $1.00 in cents
+        recurring: {
+          interval: 'month',
+        },
+        product: product.id,
+      });
+
       // Create subscription
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Premium Plan',
-            },
-            unit_amount: 100, // $1.00 in cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: price.id,
         }],
         payment_behavior: 'default_incomplete',
         payment_settings: {
@@ -91,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserStripeInfo(userId, customerId, subscription.id);
 
       const invoice = subscription.latest_invoice as Stripe.Invoice;
-      const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+      const paymentIntent = (invoice as any).payment_intent as Stripe.PaymentIntent;
 
       res.json({
         subscriptionId: subscription.id,
@@ -120,18 +126,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateSubscriptionStatus(
           userId, 
           subscription.status,
-          subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : undefined
+          (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000) : undefined
         );
       }
 
       res.json({
         status: subscription.status,
-        currentPeriodEnd: subscription.current_period_end,
-        nextBillingDate: new Date(subscription.current_period_end * 1000).toLocaleDateString('en-US', {
+        currentPeriodEnd: (subscription as any).current_period_end,
+        nextBillingDate: (subscription as any).current_period_end ? new Date((subscription as any).current_period_end * 1000).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
-        })
+        }) : null
       });
     } catch (error: any) {
       console.error("Subscription status error:", error);
